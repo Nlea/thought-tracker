@@ -9,6 +9,8 @@ marked.setOptions({
 // Display current date
 const dateElement = document.getElementById('date');
 const today = new Date();
+// Use UTC for consistency with database
+const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
 dateElement.textContent = today.toLocaleDateString('en-US', { 
     weekday: 'long', 
     year: 'numeric', 
@@ -16,16 +18,27 @@ dateElement.textContent = today.toLocaleDateString('en-US', {
     day: 'numeric' 
 });
 
+// Helper function to format date as YYYY-MM-DD in UTC
+function formatDateForQuery(date) {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 // Fetch and display questions
 async function loadQuestions() {
     try {
-        const response = await fetch('/api/today');
+        const todayDate = formatDateForQuery(new Date());
+        console.log('Fetching questions for date:', todayDate);
+        const response = await fetch(`/api/questions/date?date=${todayDate}`);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
+        console.log('Received questions:', data.length, data);
         displayQuestions(data);
     } catch (error) {
         console.error('Error loading questions:', error);
