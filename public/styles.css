@@ -325,6 +325,168 @@ h1 {
     margin-top: 0.5rem;
 }
 
+/* Trends Page Styles */
+.nav-links {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.nav-link {
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    color: #4a5568;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.nav-link:hover {
+    color: #1a202c;
+}
+
+.nav-link.active {
+    color: #1a202c;
+    border-bottom-color: #1a202c;
+}
+
+.header-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.date-selector {
+    margin-top: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.date-selector label {
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.date-selector select,
+.date-selector input[type="date"],
+.date-selector button {
+    padding: 0.5rem 1rem;
+    border: 2px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background: white;
+    color: #2d3748;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.date-selector select:hover,
+.date-selector input[type="date"]:hover {
+    border-color: #1a202c;
+}
+
+.date-selector button {
+    background: #1a202c;
+    color: white;
+    border-color: #1a202c;
+    font-weight: 600;
+}
+
+.date-selector button:hover {
+    background: #2d3748;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    gap: 2rem;
+}
+
+.chart-card {
+    background: white;
+    border: 2px solid #1a202c;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.1);
+}
+
+.chart-card.full-width {
+    grid-column: 1 / -1;
+}
+
+.chart-card h2 {
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+    color: #1a202c;
+}
+
+.chart-controls {
+    margin-bottom: 1rem;
+}
+
+.chart-controls select {
+    padding: 0.4rem 0.75rem;
+    border: 2px solid #cbd5e0;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    background: white;
+    cursor: pointer;
+}
+
+.quality-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+}
+
+.quality-metric {
+    text-align: center;
+    padding: 1rem;
+    background: #f7fafc;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+.quality-metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin-bottom: 0.25rem;
+}
+
+.quality-metric-label {
+    font-size: 0.85rem;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 1rem;
+    border: 4px solid #f3f4f6;
+    border-top: 4px solid #1a202c;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 @media (max-width: 768px) {
     body {
         padding: 1rem;
@@ -340,6 +502,14 @@ h1 {
     
     .question-prompt {
         font-size: 1.1rem;
+    }
+    
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
     }
 }
 

@@ -68,3 +68,25 @@ export const ZDateOrRangeQuery = z
       path: ["date"],
     },
   );
+
+// Query validation for trends endpoints - optional date range
+export const ZDateRangeQuery = z
+  .object({
+    start: z
+      .string()
+      .regex(DATE_ONLY_REGEX, "Expected date in YYYY-MM-DD format")
+      .optional(),
+    end: z
+      .string()
+      .regex(DATE_ONLY_REGEX, "Expected date in YYYY-MM-DD format")
+      .optional(),
+  })
+  .refine(
+    (v) =>
+      // Both provided or neither provided
+      (!!v.start && !!v.end) || (!v.start && !v.end),
+    {
+      message: "Provide both `start` and `end` or neither (YYYY-MM-DD)",
+      path: ["start"],
+    },
+  );

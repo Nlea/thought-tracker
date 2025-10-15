@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trends - Thought Tracer</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="alternate icon" href="/favicon.ico">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Doto:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1>Trends & Analytics</h1>
+                <nav class="nav-links">
+                    <a href="/" class="nav-link">Today's Questions</a>
+                    <a href="/trends.html" class="nav-link active">Trends</a>
+                </nav>
+            </div>
+            <div id="date-selector" class="date-selector">
+                <label for="date-range">Date Range:</label>
+                <select id="date-range">
+                    <option value="all-time">All Time</option>
+                    <option value="last-7-days" selected>Last 7 Days</option>
+                    <option value="last-30-days">Last 30 Days</option>
+                    <option value="last-90-days">Last 90 Days</option>
+                    <option value="custom">Custom Range</option>
+                </select>
+                <div id="custom-dates" style="display: none; margin-top: 10px;">
+                    <input type="date" id="start-date">
+                    <input type="date" id="end-date">
+                    <button id="apply-dates">Apply</button>
+                </div>
+            </div>
+        </header>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading trends data...</p>
+        </div>
+
+        <div id="error"></div>
+
+        <!-- Overview Stats -->
+        <div id="overview-stats" class="stats-grid" style="display: none;"></div>
+
+        <!-- Charts Grid -->
+        <div id="charts-container" class="charts-grid" style="display: none;">
+            <!-- Temporal Trends Chart -->
+            <div class="chart-card">
+                <h2>Questions Over Time</h2>
+                <div class="chart-controls">
+                    <select id="temporal-interval">
+                        <option value="daily" selected>Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                </div>
+                <canvas id="temporal-chart"></canvas>
+            </div>
+
+            <!-- Language Distribution Chart -->
+            <div class="chart-card">
+                <h2>Language Distribution</h2>
+                <canvas id="language-chart"></canvas>
+            </div>
+
+            <!-- Keywords Cloud -->
+            <div class="chart-card">
+                <h2>Top Keywords</h2>
+                <canvas id="keywords-chart"></canvas>
+            </div>
+
+            <!-- IDE Distribution Chart -->
+            <div class="chart-card">
+                <h2>IDE Usage</h2>
+                <canvas id="ide-chart"></canvas>
+            </div>
+
+            <!-- Repository Activity Chart -->
+            <div class="chart-card full-width">
+                <h2>Repository Activity</h2>
+                <canvas id="repo-chart"></canvas>
+            </div>
+
+            <!-- Answer Quality Metrics -->
+            <div class="chart-card full-width">
+                <h2>Answer Quality Metrics</h2>
+                <div id="quality-metrics" class="quality-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/trends-script.js"></script>
+</body>
+</html>
+

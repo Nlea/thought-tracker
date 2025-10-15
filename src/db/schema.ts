@@ -1,4 +1,4 @@
-import { pgTable, text, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, boolean, timestamp, index } from "drizzle-orm/pg-core";
 
 export const questions = pgTable("questions", {
   id: text()
@@ -10,6 +10,13 @@ export const questions = pgTable("questions", {
   githubRepo: text(),
   askedAt: timestamp("asked_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => {
+  return {
+    askedAtIdx: index("questions_asked_at_idx").on(table.askedAt),
+    languageIdx: index("questions_language_idx").on(table.language),
+    sourceIdeIdx: index("questions_source_ide_idx").on(table.sourceIde),
+    githubRepoIdx: index("questions_github_repo_idx").on(table.githubRepo),
+  };
 });
 
 export type NewQuestion = typeof questions.$inferInsert;

@@ -5,6 +5,7 @@ import { dbProvider } from "../middleware/dbProvider";
 import { zodValidator } from "../middleware/validator";
 import * as schema from "../db/schema";
 import { ZAnswerByIDParams, ZAnswersByQuestionParams, ZQuestionByIDParams, ZDateOrRangeQuery} from "../dtos";
+import trends from "./trends";
 
 type AppEnv = {
   Bindings: CloudflareBindings;
@@ -119,7 +120,8 @@ const api = new Hono()
     await db.delete(schema.questions).where(eq(schema.questions.id, id));
     await db.delete(schema.answers).where(eq(schema.answers.questionId, id));
     return c.json({ message: "Question and Answer deleted" });
-  });
+  })
+  .route("/trends", trends);
 
 
 
