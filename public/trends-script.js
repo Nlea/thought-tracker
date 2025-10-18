@@ -1,5 +1,5 @@
 // Global chart instances
-let temporalChart, languageChart, keywordsChart, ideChart, repoChart;
+let temporalChart, languageChart, topicLanguageChart, keywordsChart, ideChart, frameworkChart, runtimeChart, repoChart;
 
 // State management
 let currentDateRange = 'last-7-days';
@@ -116,9 +116,12 @@ async function loadAllData() {
         await Promise.all([
             loadOverview(),
             loadLanguages(),
+            loadTopicLanguages(),
             loadTemporalTrends(),
             loadKeywords(),
             loadIdes(),
+            loadFrameworks(),
+            loadRuntimes(),
             loadRepositories(),
             loadAnswerQuality()
         ]);
@@ -144,20 +147,8 @@ async function loadOverview() {
     
     document.getElementById('overview-stats').innerHTML = `
         <div class="stat-card">
-            <div class="stat-number">${overview.totalQuestions}</div>
-            <div class="stat-label">Total Questions</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">${overview.totalAnswers}</div>
-            <div class="stat-label">Total Answers</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">${overview.avgAnswersPerQuestion}</div>
-            <div class="stat-label">Avg Answers/Question</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">${(overview.correctAnswerRate * 100).toFixed(1)}%</div>
-            <div class="stat-label">Correct Answer Rate</div>
+            <div class="stat-number">${overview.totalInteractions}</div>
+            <div class="stat-label">Total Interactions</div>
         </div>
     `;
 }
@@ -178,7 +169,7 @@ async function loadTemporalTrends() {
         data: {
             labels: data.trends.map(t => formatDateNice(t.date)),
             datasets: [{
-                label: 'Questions',
+                label: 'Interactions',
                 data: data.trends.map(t => t.count),
                 borderColor: '#1a202c',
                 backgroundColor: 'rgba(26, 32, 44, 0.1)',
@@ -228,6 +219,43 @@ async function loadLanguages() {
             datasets: [{
                 data: data.languages.map(l => l.count),
                 backgroundColor: colors.slice(0, data.languages.length),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+// Load topic language distribution
+async function loadTopicLanguages() {
+    const data = await fetchAPI('topic-languages');
+    const ctx = document.getElementById('topic-language-chart');
+    
+    if (topicLanguageChart) {
+        topicLanguageChart.destroy();
+    }
+    
+    const colors = [
+        '#1a202c', '#2d3748', '#4a5568', '#718096', '#a0aec0',
+        '#cbd5e0', '#e2e8f0', '#edf2f7'
+    ];
+    
+    topicLanguageChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: data.topicLanguages.map(l => l.language),
+            datasets: [{
+                data: data.topicLanguages.map(l => l.count),
+                backgroundColor: colors.slice(0, data.topicLanguages.length),
                 borderWidth: 2,
                 borderColor: '#fff'
             }]
@@ -319,6 +347,74 @@ async function loadIdes() {
     });
 }
 
+// Load frameworks
+async function loadFrameworks() {
+    const data = await fetchAPI('frameworks');
+    const ctx = document.getElementById('framework-chart');
+    
+    if (frameworkChart) {
+        frameworkChart.destroy();
+    }
+    
+    const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'];
+    
+    frameworkChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: data.frameworks.map(f => f.framework),
+            datasets: [{
+                data: data.frameworks.map(f => f.count),
+                backgroundColor: colors.slice(0, data.frameworks.length),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+// Load runtimes
+async function loadRuntimes() {
+    const data = await fetchAPI('runtimes');
+    const ctx = document.getElementById('runtime-chart');
+    
+    if (runtimeChart) {
+        runtimeChart.destroy();
+    }
+    
+    const colors = ['#fa709a', '#fee140', '#30cfd0', '#330867', '#a8edea', '#fed6e3'];
+    
+    runtimeChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: data.runtimes.map(r => r.runtime),
+            datasets: [{
+                data: data.runtimes.map(r => r.count),
+                backgroundColor: colors.slice(0, data.runtimes.length),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
 // Load repositories
 async function loadRepositories() {
     const data = await fetchAPI('repositories');
@@ -345,7 +441,7 @@ async function loadRepositories() {
                 return repo;
             }),
             datasets: [{
-                label: 'Questions',
+                label: 'Interactions',
                 data: topRepos.map(r => r.count),
                 backgroundColor: '#1a202c',
                 borderWidth: 0
@@ -392,14 +488,6 @@ async function loadAnswerQuality() {
         <div class="quality-metric">
             <div class="quality-metric-value">${(quality.questionAnswerRate * 100).toFixed(1)}%</div>
             <div class="quality-metric-label">Answer Rate</div>
-        </div>
-        <div class="quality-metric">
-            <div class="quality-metric-value">${quality.questionsWithCorrectAnswer}</div>
-            <div class="quality-metric-label">Correct Answers</div>
-        </div>
-        <div class="quality-metric">
-            <div class="quality-metric-value">${(quality.correctAnswerRate * 100).toFixed(1)}%</div>
-            <div class="quality-metric-label">Correct Rate</div>
         </div>
         <div class="quality-metric">
             <div class="quality-metric-value">${quality.avgAnswersPerQuestion}</div>

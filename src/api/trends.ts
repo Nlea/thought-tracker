@@ -37,49 +37,13 @@ const trends = new Hono<AppEnv>()
       ? and(gte(schema.questions.askedAt, dateStart), lt(schema.questions.askedAt, dateEnd))
       : undefined;
     
-    // Get total questions
-    const [totalQuestionsResult] = await db
+    // Get total interactions (questions = interactions since each hit includes both Q&A)
+    const [totalInteractionsResult] = await db
       .select({ count: count() })
       .from(schema.questions)
       .where(dateFilter);
     
-    const totalQuestions = totalQuestionsResult.count;
-    
-    // Get total answers
-    const answersQuery = dateFilter
-      ? db
-          .select({ count: count() })
-          .from(schema.answers)
-          .innerJoin(schema.questions, eq(schema.answers.questionId, schema.questions.id))
-          .where(dateFilter)
-      : db.select({ count: count() }).from(schema.answers);
-    
-    const [totalAnswersResult] = await answersQuery;
-    const totalAnswers = totalAnswersResult.count;
-    
-    // Get correct answers count
-    const correctAnswersQuery = dateFilter
-      ? db
-          .select({ count: count() })
-          .from(schema.answers)
-          .innerJoin(schema.questions, eq(schema.answers.questionId, schema.questions.id))
-          .where(and(eq(schema.answers.isCorrect, true), dateFilter))
-      : db
-          .select({ count: count() })
-          .from(schema.answers)
-          .where(eq(schema.answers.isCorrect, true));
-    
-    const [correctAnswersResult] = await correctAnswersQuery;
-    const correctAnswers = correctAnswersResult.count;
-    
-    // Calculate metrics
-    const avgAnswersPerQuestion = totalQuestions > 0 
-      ? Number((totalAnswers / totalQuestions).toFixed(2))
-      : 0;
-    
-    const correctAnswerRate = totalAnswers > 0
-      ? Number((correctAnswers / totalAnswers).toFixed(3))
-      : 0;
+    const totalInteractions = totalInteractionsResult.count;
     
     // Get date range from actual data
     const dateRangeQuery = await db
@@ -92,11 +56,7 @@ const trends = new Hono<AppEnv>()
     
     return c.json({
       overview: {
-        totalQuestions,
-        totalAnswers,
-        correctAnswers,
-        avgAnswersPerQuestion,
-        correctAnswerRate,
+        totalInteractions,
         dateRange: {
           start: dateRangeQuery[0]?.earliest || null,
           end: dateRangeQuery[0]?.latest || null,
@@ -105,7 +65,7 @@ const trends = new Hono<AppEnv>()
     });
   })
   
-  // Language distribution
+  // Language distribution (project context)
   .get("/languages", zodValidator("query", ZDateRangeQuery), async (c) => {
     const db = c.var.db;
     const { start, end } = c.req.valid("query");
@@ -146,6 +106,49 @@ const trends = new Hono<AppEnv>()
     }));
     
     return c.json({ languages });
+  })
+  
+  // Topic language distribution (what questions are about)
+  .get("/topic-languages", zodValidator("query", ZDateRangeQuery), async (c) => {
+    const db = c.var.db;
+    const { start, end } = c.req.valid("query");
+    
+    let dateStart: Date | undefined;
+    let dateEnd: Date | undefined;
+    
+    if (start && end) {
+      const parsedStart = new Date(start);
+      const parsedEnd = new Date(end);
+      dateStart = new Date(Date.UTC(parsedStart.getUTCFullYear(), parsedStart.getUTCMonth(), parsedStart.getUTCDate()));
+      dateEnd = new Date(Date.UTC(parsedEnd.getUTCFullYear(), parsedEnd.getUTCMonth(), parsedEnd.getUTCDate() + 1));
+    }
+    
+    const dateFilter = dateStart && dateEnd
+      ? and(gte(schema.questions.askedAt, dateStart), lt(schema.questions.askedAt, dateEnd))
+      : undefined;
+    
+    // Get topic language distribution
+    const topicLanguageStats = await db
+      .select({
+        topicLanguage: schema.questions.topicLanguage,
+        count: count(),
+      })
+      .from(schema.questions)
+      .where(dateFilter)
+      .groupBy(schema.questions.topicLanguage)
+      .orderBy(desc(count()));
+    
+    // Calculate total for percentages
+    const total = topicLanguageStats.reduce((sum, item) => sum + item.count, 0);
+    
+    // Format response with percentages
+    const topicLanguages = topicLanguageStats.map((item) => ({
+      language: item.topicLanguage || "general",
+      count: item.count,
+      percentage: total > 0 ? Number(((item.count / total) * 100).toFixed(1)) : 0,
+    }));
+    
+    return c.json({ topicLanguages });
   })
   
   // Temporal trends - questions over time
@@ -361,6 +364,88 @@ const trends = new Hono<AppEnv>()
     return c.json({ ides });
   })
   
+  // Framework usage trends
+  .get("/frameworks", zodValidator("query", ZDateRangeQuery), async (c) => {
+    const db = c.var.db;
+    const { start, end } = c.req.valid("query");
+    
+    let dateStart: Date | undefined;
+    let dateEnd: Date | undefined;
+    
+    if (start && end) {
+      const parsedStart = new Date(start);
+      const parsedEnd = new Date(end);
+      dateStart = new Date(Date.UTC(parsedStart.getUTCFullYear(), parsedStart.getUTCMonth(), parsedStart.getUTCDate()));
+      dateEnd = new Date(Date.UTC(parsedEnd.getUTCFullYear(), parsedEnd.getUTCMonth(), parsedEnd.getUTCDate() + 1));
+    }
+    
+    const dateFilter = dateStart && dateEnd
+      ? and(gte(schema.questions.askedAt, dateStart), lt(schema.questions.askedAt, dateEnd))
+      : undefined;
+    
+    // Get framework distribution
+    const frameworkStats = await db
+      .select({
+        framework: schema.questions.framework,
+        count: count(),
+      })
+      .from(schema.questions)
+      .where(dateFilter)
+      .groupBy(schema.questions.framework)
+      .orderBy(desc(count()));
+    
+    const total = frameworkStats.reduce((sum, item) => sum + item.count, 0);
+    
+    const frameworks = frameworkStats.map((item) => ({
+      framework: item.framework || "none",
+      count: item.count,
+      percentage: total > 0 ? Number(((item.count / total) * 100).toFixed(1)) : 0,
+    }));
+    
+    return c.json({ frameworks });
+  })
+  
+  // Runtime environment trends
+  .get("/runtimes", zodValidator("query", ZDateRangeQuery), async (c) => {
+    const db = c.var.db;
+    const { start, end } = c.req.valid("query");
+    
+    let dateStart: Date | undefined;
+    let dateEnd: Date | undefined;
+    
+    if (start && end) {
+      const parsedStart = new Date(start);
+      const parsedEnd = new Date(end);
+      dateStart = new Date(Date.UTC(parsedStart.getUTCFullYear(), parsedStart.getUTCMonth(), parsedStart.getUTCDate()));
+      dateEnd = new Date(Date.UTC(parsedEnd.getUTCFullYear(), parsedEnd.getUTCMonth(), parsedEnd.getUTCDate() + 1));
+    }
+    
+    const dateFilter = dateStart && dateEnd
+      ? and(gte(schema.questions.askedAt, dateStart), lt(schema.questions.askedAt, dateEnd))
+      : undefined;
+    
+    // Get runtime distribution
+    const runtimeStats = await db
+      .select({
+        runtime: schema.questions.runtime,
+        count: count(),
+      })
+      .from(schema.questions)
+      .where(dateFilter)
+      .groupBy(schema.questions.runtime)
+      .orderBy(desc(count()));
+    
+    const total = runtimeStats.reduce((sum, item) => sum + item.count, 0);
+    
+    const runtimes = runtimeStats.map((item) => ({
+      runtime: item.runtime || "none",
+      count: item.count,
+      percentage: total > 0 ? Number(((item.count / total) * 100).toFixed(1)) : 0,
+    }));
+    
+    return c.json({ runtimes });
+  })
+  
   // Answer quality metrics
   .get("/answer-quality", zodValidator("query", ZDateRangeQuery), async (c) => {
     const db = c.var.db;
@@ -397,16 +482,13 @@ const trends = new Hono<AppEnv>()
           .from(schema.questions);
     
     let totalAnswers = 0;
-    let correctAnswers = 0;
     let questionsWithAnswers = 0;
     let questionsWithMultipleAnswers = 0;
-    let questionsWithCorrectAnswer = 0;
     const responseTimes: number[] = [];
     
     for (const question of questionsData) {
       const answers = await db
         .select({
-          isCorrect: schema.answers.isCorrect,
           createdAt: schema.answers.createdAt,
         })
         .from(schema.answers)
@@ -418,12 +500,6 @@ const trends = new Hono<AppEnv>()
         
         if (answers.length > 1) {
           questionsWithMultipleAnswers++;
-        }
-        
-        const hasCorrectAnswer = answers.some((a) => a.isCorrect);
-        if (hasCorrectAnswer) {
-          questionsWithCorrectAnswer++;
-          correctAnswers += answers.filter((a) => a.isCorrect).length;
         }
         
         // Calculate time to first answer (in seconds)
@@ -460,10 +536,7 @@ const trends = new Hono<AppEnv>()
         questionsWithAnswers,
         unansweredQuestions,
         questionsWithMultipleAnswers,
-        questionsWithCorrectAnswer,
         totalAnswers,
-        correctAnswers,
-        correctAnswerRate: totalAnswers > 0 ? Number((correctAnswers / totalAnswers).toFixed(3)) : 0,
         questionAnswerRate: totalQuestions > 0 ? Number((questionsWithAnswers / totalQuestions).toFixed(3)) : 0,
         avgAnswersPerQuestion: questionsWithAnswers > 0 ? Number((totalAnswers / questionsWithAnswers).toFixed(2)) : 0,
         avgResponseTimeSeconds: Number(avgResponseTime.toFixed(2)),

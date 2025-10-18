@@ -4,9 +4,10 @@ import { z } from "zod";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "../db/schema";
+import { normalizeLanguage, normalizeGithubRepo } from "../dtos";
 
 const mcp = new McpServer({
-  name: "vegas-mcp",
+  name: "thought-tracer-mcp",
   version: "1.0.0",
   schemaAdapter: (schema) => z.toJSONSchema(schema as z.ZodType),
 });
@@ -23,8 +24,10 @@ mcp.tool("chat-turn/capture", {
   inputSchema: z.object({
     userMessage: z.string().min(1).describe("The user's question"),
     assistantMessage: z.string().min(1).describe("The assistant's answer"),
-    isCorrect: z.boolean().default(false).describe("Whether the answer was marked as correct"),
-    language: z.string().optional().describe("Programming language being used"),
+    language: z.string().optional().describe("Programming language of the project/file context"),
+    topicLanguage: z.string().optional().describe("Programming language that the question is actually about (may differ from project language for general questions)"),
+    framework: z.string().optional().describe("Framework being used in the project (e.g., 'Hono', 'Express', 'Next.js', 'React')"),
+    runtime: z.string().optional().describe("Runtime environment (e.g., 'Cloudflare Workers', 'Node.js', 'Deno', 'Bun')"),
     sourceIde: z.string().optional().describe("The IDE being used (e.g., 'Cursor', 'VSCode')"),
     githubRepo: z.string().url().optional().describe("GitHub repository URL from the current workspace (e.g., from git remote origin)"),
 
@@ -42,14 +45,17 @@ mcp.tool("chat-turn/capture", {
         throw new Error("Database not available");
       }
 
-      // Create question
+      // Create question with normalized language and github repo
       const [question] = await db
         .insert(schema.questions)
         .values({
           prompt: args.userMessage,
-          language: args.language,
+          language: normalizeLanguage(args.language),
+          topicLanguage: normalizeLanguage(args.topicLanguage),
+          framework: args.framework,
+          runtime: args.runtime,
           sourceIde: args.sourceIde,
-          githubRepo: args.githubRepo,
+          githubRepo: normalizeGithubRepo(args.githubRepo),
         })
         .returning();
 
@@ -59,7 +65,6 @@ mcp.tool("chat-turn/capture", {
         .values({
           questionId: question.id,
           content: args.assistantMessage,
-          isCorrect: args.isCorrect,
         })
         .returning();
 

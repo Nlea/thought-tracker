@@ -75,13 +75,13 @@ function displayQuestions(questions) {
     }
 
     // Calculate stats
-    const totalQuestions = questions.length;
+    const totalInteractions = questions.length;
 
     // Display stats
     statsDiv.innerHTML = `
         <div class="stat-card">
-            <div class="stat-number">${totalQuestions}</div>
-            <div class="stat-label">Total Questions Today</div>
+            <div class="stat-number">${totalInteractions}</div>
+            <div class="stat-label">Total Interactions Today</div>
         </div>
     `;
 
@@ -91,10 +91,22 @@ function displayQuestions(questions) {
             <div class="question-header">
                 <div class="question-prompt">${escapeHtml(question.prompt)}</div>
                 <div class="question-meta">
-                    ${question.language ? `<span class="badge language">${escapeHtml(question.language)}</span>` : ''}
-                    ${question.sourceIde ? `<span class="badge ide">${escapeHtml(question.sourceIde)}</span>` : ''}
-                    ${question.githubRepo ? `<span class="badge github"><a href="${escapeHtml(question.githubRepo)}" target="_blank" rel="noopener noreferrer">📁 Repo</a></span>` : ''}
-                    <span class="badge time">${formatTime(question.askedAt)}</span>
+                    <div class="meta-row">
+                        <span class="meta-label">Project:</span>
+                        ${question.githubRepo ? `<span class="badge github"><a href="${escapeHtml(question.githubRepo)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(question.githubRepo)}">URL</a></span>` : '<span class="badge">None</span>'}
+                        ${question.language ? `<span class="badge language" title="Project Context">${escapeHtml(question.language)}</span>` : ''}
+                        ${question.framework ? `<span class="badge framework" title="Framework">${escapeHtml(question.framework)}</span>` : ''}
+                        ${question.runtime ? `<span class="badge runtime" title="Runtime">${escapeHtml(question.runtime)}</span>` : ''}
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Topic:</span>
+                        ${question.topicLanguage ? `<span class="badge topic-language" title="Question Topic">${escapeHtml(question.topicLanguage)}</span>` : '<span class="badge topic-language" title="Question Topic">General</span>'}
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Session:</span>
+                        <span class="badge time">${formatTime(question.askedAt)}</span>
+                        ${question.sourceIde ? `<span class="badge ide">${escapeHtml(question.sourceIde)}</span>` : ''}
+                    </div>
                 </div>
             </div>
             
@@ -104,11 +116,10 @@ function displayQuestions(questions) {
                         ${question.answers.length} Answer${question.answers.length !== 1 ? 's' : ''}
                     </div>
                     ${question.answers.map(answer => `
-                        <div class="answer ${answer.isCorrect ? 'correct' : ''}">
+                        <div class="answer">
                             <div class="answer-content markdown-content">${marked.parse(answer.content)}</div>
                             <div class="answer-footer">
                                 <span>${formatTime(answer.createdAt)}</span>
-                                ${answer.isCorrect ? '<span class="correct-badge">✓ Correct</span>' : ''}
                             </div>
                         </div>
                     `).join('')}
